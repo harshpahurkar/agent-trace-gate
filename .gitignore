@@ -1,0 +1,17 @@
+# local state written by the agent hooks
+.agent-trace/
+
+# python
+.venv/
+__pycache__/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# node
+node_modules/
+
+# local env + exported artifacts
+.env
+traces.json
