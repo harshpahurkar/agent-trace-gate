@@ -1,0 +1,34 @@
+# Trace backend for agent-trace-gate.
+#
+# Default service is Jaeger v2 — it is built on the OpenTelemetry Collector,
+# so it ingests OTLP natively on 4317 (gRPC) and 4318 (HTTP) with zero config
+# files. Jaeger v1 is EOL (2025-12-31); don't swap in all-in-one v1 images.
+#
+#   docker compose up -d          -> Jaeger UI at http://localhost:16686
+#
+# Optional: the `lgtm` profile runs the Grafana OTel-LGTM all-in-one image
+# instead, which adds Prometheus + Loki + Grafana so Claude Code's
+# claude_code.* metrics and events have somewhere to land too. It binds the
+# same OTLP ports, so run ONE of the two backends at a time:
+#
+#   docker compose down
+#   docker compose --profile lgtm up -d lgtm   -> Grafana at http://localhost:3000 (admin/admin)
+
+services:
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.20.0
+    container_name: agent-trace-jaeger
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    restart: unless-stopped
+
+  lgtm:
+    image: grafana/otel-lgtm
+    container_name: agent-trace-lgtm
+    profiles: ["lgtm"]
+    ports:
+      - "3000:3000"   # Grafana UI (admin/admin)
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
