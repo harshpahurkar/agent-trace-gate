@@ -1,0 +1,21 @@
+{
+  "name": "agent-trace-gate",
+  "private": true,
+  "type": "module",
+  "description": "Runtime checkpoints for AI-generated code — OpenTelemetry-traced execution gates for Claude Code and Cursor output.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.221.0",
+    "@opentelemetry/sdk-node": "^0.221.0",
+    "lodash": "^4.17.21",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.7",
+    "typescript": "^5.6.0"
+  }
+}
