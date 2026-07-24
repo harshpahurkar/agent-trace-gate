@@ -1,0 +1,71 @@
+# Declares what the checkpoint gate watches.
+#
+# Each target names a file, its language, and the contract describing its
+# boundary behaviour. `expect` documents the verdict a SEEDED sample is
+# supposed to produce — `agenttrace demo` (and the CI proof job) assert the
+# pipeline reaches exactly that verdict, so the demo doubles as the engine's
+# regression suite. Real project files you add later just omit `expect`:
+# then anything other than a clean pass blocks the merge.
+
+[settings]
+timeout_seconds = 20
+
+# ---- python ----------------------------------------------------------------
+
+[[targets]]
+name = "weather_report"
+file = "samples/python/passing/weather_report.py"
+language = "python"
+contract = "samples/python/contracts/weather_report.contract.py"
+expect = "pass"
+
+[[targets]]
+name = "report_gen"
+file = "samples/python/hallucinated_import/report_gen.py"
+language = "python"
+contract = "samples/python/contracts/report_gen.contract.py"
+expect = "hallucinated-import"
+
+[[targets]]
+name = "date_utils"
+file = "samples/python/hallucinated_attr/date_utils.py"
+language = "python"
+contract = "samples/python/contracts/date_utils.contract.py"
+expect = "hallucinated-api"
+
+[[targets]]
+name = "user_api"
+file = "samples/python/schema_mismatch/user_api.py"
+language = "python"
+contract = "samples/python/contracts/user_api.contract.py"
+expect = "schema-mismatch"
+
+# ---- node ------------------------------------------------------------------
+
+[[targets]]
+name = "invoice_ok"
+file = "samples/node/passing/invoice_ok.mjs"
+language = "node"
+contract = "samples/node/contracts/invoice_ok.contract.mjs"
+expect = "pass"
+
+[[targets]]
+name = "fetch_prices"
+file = "samples/node/hallucinated_import/fetch_prices.mjs"
+language = "node"
+contract = "samples/node/contracts/fetch_prices.contract.mjs"
+expect = "hallucinated-import"
+
+[[targets]]
+name = "slugify"
+file = "samples/node/hallucinated_method/slugify.mjs"
+language = "node"
+contract = "samples/node/contracts/slugify.contract.mjs"
+expect = "hallucinated-api"
+
+[[targets]]
+name = "invoice"
+file = "samples/node/schema_mismatch/invoice.mjs"
+language = "node"
+contract = "samples/node/contracts/invoice.contract.mjs"
+expect = "schema-mismatch"
