@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "agenttrace"
 version = "0.1.0"
 description = "Runtime checkpoints for AI-generated code: OpenTelemetry-traced execution gates that catch hallucinated imports, fake APIs, and schema drift before merge."
-readme = "../README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Harsh Pahurkar" }]
