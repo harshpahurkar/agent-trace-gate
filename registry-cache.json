@@ -1,0 +1,12 @@
+{
+  "npm:axios-scraper": {
+    "age_days": null,
+    "checked_at": "2026-08-27T06:37:14+00:00",
+    "exists": false
+  },
+  "pypi:pandas_profiling_lite": {
+    "age_days": null,
+    "checked_at": "2026-08-27T06:37:07+00:00",
+    "exists": false
+  }
+}
