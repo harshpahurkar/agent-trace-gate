@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "python .cursor/hooks/record_edit.py"
+      }
+    ]
+  }
+}
