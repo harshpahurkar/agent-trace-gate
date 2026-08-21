@@ -56,8 +56,27 @@ def find_root(start: Path | None = None) -> Path:
     )
 
 
+def _load_dotenv(root: Path) -> None:
+    """Apply <root>/.env as environment defaults. Values already set in the
+    shell win — this only fills gaps, so exporting a var still overrides."""
+    env_file = root / ".env"
+    if not env_file.exists():
+        return
+    try:
+        lines = env_file.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
+
+
 def load(root: Path | None = None) -> Config:
     root = root or find_root()
+    _load_dotenv(root)
     with open(root / CONFIG_NAME, "rb") as fh:
         raw = tomllib.load(fh)
 
