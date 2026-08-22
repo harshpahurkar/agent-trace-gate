@@ -42,9 +42,11 @@ Five checkpoints per file, one trace per run, visible in Jaeger:
    shared error taxonomy.
 4. **runtime.smoke** — the differentiator: the code actually *runs*, in a
    `python -I` / `node --import` subprocess with a stripped env and a
-   timeout, emitting a `code.call` span per function — joined to the parent
-   trace across the process boundary via W3C TRACEPARENT. A hallucinated API
-   detonates on a visible span with the exception recorded at the exact frame.
+   timeout, emitting `code.call` spans (per function call in Python via
+   `sys.monitoring`; per entrypoint invocation in Node) — joined to the
+   parent trace across the process boundary via W3C TRACEPARENT. A
+   hallucinated API detonates on a visible span with the exception recorded
+   at the exact frame.
 5. **contract** — the return value is validated against a pydantic / zod
    contract. Code that runs clean but returns the wrong shape fails here.
 
@@ -52,8 +54,10 @@ Five checkpoints per file, one trace per run, visible in Jaeger:
 
 `agenttrace demo` runs eight seeded samples — a correct control plus three
 planted failure classes, in both Python and Node — and **exits nonzero unless
-every planted bug is caught at exactly the checkpoint it was seeded for**.
-Real output:
+every planted bug produces exactly the failure class it was seeded for**
+(declared as `expect` in `checkpoints.toml`). Real output — the live table
+adds a seeded-expectation column and Jaeger deep links, trimmed here for
+width:
 
 ```
 sample          lang  verdict  caught by       error type           detail
@@ -75,16 +79,29 @@ clean execution, wrong shape — only the contract checkpoint catches them.
 
 ## Quickstart (~4–5 minutes cold)
 
+macOS / Linux:
+
 ```bash
 git clone https://github.com/harshpahurkar/agent-trace-gate && cd agent-trace-gate
-docker compose up -d                      # Jaeger v2 → http://localhost:16686
-python -m venv .venv && .venv/Scripts/pip install -e ./checkpoints   # or ./.venv/bin/pip
-npm ci
+docker compose up -d                       # Jaeger v2 → http://localhost:16686
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ./checkpoints && npm ci
 agenttrace demo
 ```
 
-Windows one-shot: `.\scripts\quickstart.ps1`. Full walkthrough with timings
-and what to look at in Jaeger: **[QUICKSTART.md](QUICKSTART.md)**.
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/harshpahurkar/agent-trace-gate; cd agent-trace-gate
+docker compose up -d
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -e ./checkpoints; npm ci
+agenttrace demo
+```
+
+(Or the one-shot: `.\scripts\quickstart.ps1` / `./scripts/quickstart.sh`.)
+Full walkthrough with timings and what to look at in Jaeger:
+**[QUICKSTART.md](QUICKSTART.md)**.
 
 ## Wiring it to your agent
 

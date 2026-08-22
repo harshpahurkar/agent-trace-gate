@@ -57,9 +57,15 @@ Status is `ERROR` with the failure message when the verdict is `fail`.
 
 | attribute | notes |
 |---|---|
-| `code.function` | qualified function name |
-| `code.filepath` | the sample file (only its own code is traced) |
-| `code.lineno` | function's first line |
+| `code.function` | function name (both languages) |
+| `code.filepath` | the sample file (both languages) |
+| `code.lineno` | function's first line — Python only |
+
+Coverage differs by language: Python traces **every** function call defined
+in the sample file (`sys.monitoring`), so helper chains like
+`build_report → summarize` each get a span; Node wraps the **contract
+entrypoint invocation only**, so JS helpers inside the sample don't get
+their own spans.
 
 When the call raises, the exception is recorded as a span exception event and
 the span status is `ERROR` — Jaeger shows the exact frame where a

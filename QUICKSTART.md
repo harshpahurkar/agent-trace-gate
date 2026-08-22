@@ -25,13 +25,25 @@ UI comes up at <http://localhost:16686>.
 
 ## 3. Install the engine (~90 s, once)
 
+macOS / Linux:
+
 ```bash
-python -m venv .venv
-# Windows:            macOS/Linux:
-.venv\Scripts\pip install -e ./checkpoints
-# ./.venv/bin/pip install -e ./checkpoints
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ./checkpoints
 npm ci
 ```
+
+Windows (PowerShell):
+
+```powershell
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -e ./checkpoints
+npm ci
+```
+
+Activating the venv is what puts the `agenttrace` command on PATH for the
+next step. In a fresh shell later, re-activate — or call it by path
+(`./.venv/bin/agenttrace` / `.\.venv\Scripts\agenttrace`).
 
 ## 4. Run the seeded demo (~60 s first run while pyright bootstraps, ~10 s after)
 
@@ -40,7 +52,9 @@ agenttrace demo
 ```
 
 You get eight verdicts — two clean controls and six seeded failures, each
-caught at exactly the checkpoint it was planted for:
+producing exactly the failure class it was planted for (in this default run,
+caught at the checkpoint that models it). The live table also shows the
+seeded-expectation check and Jaeger deep links, trimmed here for width:
 
 ```
 sample          lang  verdict  caught by       error type           detail

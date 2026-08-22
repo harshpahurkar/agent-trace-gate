@@ -95,11 +95,13 @@ Each checkpoint returns into a shared verdict taxonomy:
 
 Design decisions worth knowing:
 
-- **Registry oracle is cache-first-write-through.** Results land in
-  `registry-cache.json` (committed), so CI is deterministic and offline runs
-  still classify the seeded samples. Fresh packages (<90 days) are flagged —
-  a "real" package that young matching an LLM-suggested import is what a
-  slopsquatting trap looks like.
+- **Registry oracle is cache-first-write-through.** A committed
+  `registry-cache.json` entry younger than 30 days is served without
+  touching the network (deterministic CI, offline-friendly); stale or
+  missing entries trigger a live fetch that rewrites the cache. Fresh
+  packages (<90 days on the registry) are flagged — a "real" package that
+  young matching an LLM-suggested import is what a slopsquatting trap looks
+  like.
 - **The sandbox joins the trace.** The runner injects the W3C `traceparent`
   of its `checkpoint.runtime.smoke` span into the child's env; the harness
   extracts it and parents its `code.call` spans there. One trace spans three
