@@ -89,20 +89,38 @@ def _fetch_npm(client: httpx.Client, package: str) -> tuple[bool, str | None]:
     return True, resp.json().get("time", {}).get("created")
 
 
+def _fresh(checked_at: str | None, max_age_days: int = 30) -> bool:
+    if not checked_at:
+        return False
+    try:
+        checked = datetime.fromisoformat(checked_at)
+    except ValueError:
+        return False
+    return (datetime.now(timezone.utc) - checked).days < max_age_days
+
+
 def check(package: str, ecosystem: str, root: Path) -> RegistryResult:
-    """Look a package up in its public registry, cache-first."""
+    """Look a package up in its public registry, cache-first: a committed
+    cache entry younger than 30 days is authoritative (deterministic CI, no
+    network); stale or missing entries trigger a live fetch that rewrites
+    the cache."""
     cache = _load_cache(root)
     key = f"{ecosystem}:{package}"
+
+    cached = cache.get(key)
+    if cached and _fresh(cached.get("checked_at")):
+        return RegistryResult(
+            ecosystem, package, cached.get("exists"), cached.get("age_days"), from_cache=True
+        )
 
     try:
         with httpx.Client(timeout=10, follow_redirects=True) as client:
             fetch = _fetch_pypi if ecosystem == "pypi" else _fetch_npm
             exists, earliest = fetch(client, package)
     except httpx.HTTPError:
-        if key in cache:
-            hit = cache[key]
+        if cached:  # stale beats nothing when the registry is unreachable
             return RegistryResult(
-                ecosystem, package, hit.get("exists"), hit.get("age_days"), from_cache=True
+                ecosystem, package, cached.get("exists"), cached.get("age_days"), from_cache=True
             )
         return RegistryResult(ecosystem, package, exists=None)
 

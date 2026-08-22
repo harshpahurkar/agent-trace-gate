@@ -39,6 +39,7 @@ function traced(fn, name) {
   return async (...args) => {
     const span = tracer.startSpan(`code.call ${name}`, {}, parentCtx);
     span.setAttribute("code.function", name);
+    span.setAttribute("code.filepath", samplePath);
     calls += 1;
     try {
       const result = await context.with(trace.setSpan(parentCtx, span), () => fn(...args));
