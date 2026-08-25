@@ -95,10 +95,14 @@ def load(root: Path | None = None) -> Config:
     return Config(root=root, targets=targets, timeout=timeout)
 
 
-def changed_files(root: Path, base: str) -> list[str]:
-    """Repo-relative paths changed vs `base` (three-dot diff, like a PR)."""
+def changed_files(root: Path, base: str, head: str = "HEAD") -> list[str]:
+    """Repo-relative paths changed vs `base` (three-dot diff, like a PR).
+
+    `head` defaults to the working checkout but the pre-push hook passes the
+    exact commit being pushed, which is not always HEAD.
+    """
     out = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        ["git", "diff", "--name-only", f"{base}...{head}"],
         cwd=root,
         capture_output=True,
         text=True,

@@ -1,6 +1,8 @@
-"""Pull the engine's traces back out of Jaeger as JSON (CI artifact).
+"""Pull the engine's traces back out of Jaeger as JSON.
 
-Stdlib only so CI needs nothing beyond the checkout to run it.
+Useful for attaching a failing run's traces to a bug report, or for reading
+them after the Jaeger container is gone. Stdlib only, so it runs from a bare
+checkout with nothing installed.
 """
 
 import json

@@ -5,8 +5,9 @@
                        the repo's living proof that the pipeline catches what
                        it claims to catch (exit 0 only when all match)
     agenttrace check   gate mode: resolve AI-authored files from the
-                       provenance ledger (or --base git diff in CI), run the
-                       pipeline, exit nonzero on any unexpected verdict
+                       provenance ledger (or a --base git diff, which is what
+                       the pre-push hook uses), run the pipeline, exit nonzero
+                       on any unexpected verdict
     agenttrace run     run the pipeline over one file
 """
 
@@ -25,16 +26,17 @@ def _common(parser: argparse.ArgumentParser) -> None:
                         help="span export mode (default: auto-detect the OTLP endpoint)")
     parser.add_argument("--skip-static", action="store_true",
                         help="skip static checkpoints — lets seeded bugs detonate at runtime instead")
-    parser.add_argument("--report", choices=["console", "github"], default="console",
-                        help="github adds ::error annotations and a job-summary table")
+    parser.add_argument("--report", choices=["console", "ci"], default="console",
+                        help="ci adds one machine-readable line per failure "
+                             "(::error annotations inside GitHub Actions, file:line elsewhere)")
 
 
 def _finish(verdicts, args, *, show_expected: bool, ok: bool) -> int:
     otel.flush()
     report.print_table(verdicts, show_expected=show_expected)
-    if args.report == "github":
-        report.github_annotations(verdicts)
-        report.github_summary(verdicts, show_expected=show_expected)
+    if args.report == "ci":
+        report.ci_annotations(verdicts)
+        report.ci_summary(verdicts, show_expected=show_expected)
     return 0 if ok else 1
 
 
@@ -49,11 +51,11 @@ def cmd_demo(args) -> int:
     code = _finish(verdicts, args, show_expected=True, ok=ok)
     if ok:
         report.console.print(
-            f"[green]all {len(verdicts)} targets behaved exactly as seeded — "
+            f"[green]all {len(verdicts)} targets behaved exactly as seeded - "
             "every planted bug was caught at the expected checkpoint[/green]"
         )
     else:
-        report.console.print("[red]seeded expectations not met — the pipeline missed something[/red]")
+        report.console.print("[red]seeded expectations not met - the pipeline missed something[/red]")
     return code
 
 
@@ -62,9 +64,9 @@ def cmd_check(args) -> int:
     otel.configure(args.otel)
 
     if args.base:
-        changed = set(config.changed_files(cfg.root, args.base))
+        changed = set(config.changed_files(cfg.root, args.base, args.head))
         candidates = [t for t in cfg.targets if t.file in changed]
-        source = {"source": f"git-diff vs {args.base}"}
+        source = {"source": f"git-diff {args.base}...{args.head}"}
         prov_by_file: dict[str, dict] = {}
     else:
         ledger = provenance.read_ledger(cfg.root)
@@ -121,8 +123,12 @@ def main(argv: list[str] | None = None) -> int:
     _common(p_demo)
     p_demo.set_defaults(fn=cmd_demo)
 
-    p_check = sub.add_parser("check", help="gate AI-authored files (ledger locally, --base in CI)")
+    p_check = sub.add_parser(
+        "check", help="gate AI-authored files (provenance ledger, or --base for a diff)"
+    )
     p_check.add_argument("--base", help="git ref to diff against, e.g. origin/main")
+    p_check.add_argument("--head", default="HEAD",
+                         help="tip of the range being gated (default: HEAD)")
     _common(p_check)
     p_check.set_defaults(fn=cmd_check)
 

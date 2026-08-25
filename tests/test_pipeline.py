@@ -1,8 +1,8 @@
 """End-to-end pipeline tests over the seeded samples.
 
 Kept to the fast paths (no pyright/tsc invocations): the full static+runtime
-matrix is exercised by `agenttrace demo`, which CI runs as the seeded-proof
-job. Registry lookups hit the committed registry-cache.json when offline.
+matrix is exercised by `agenttrace demo`, which `scripts/gate.sh` runs as the
+seeded proof. Registry lookups hit the committed registry-cache.json.
 """
 
 from pathlib import Path

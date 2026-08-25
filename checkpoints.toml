@@ -2,7 +2,7 @@
 #
 # Each target names a file, its language, and the contract describing its
 # boundary behaviour. `expect` documents the verdict a SEEDED sample is
-# supposed to produce — `agenttrace demo` (and the CI proof job) assert the
+# supposed to produce — `agenttrace demo` (and `scripts/gate.sh`) assert the
 # pipeline reaches exactly that verdict, so the demo doubles as the engine's
 # regression suite. Real project files you add later just omit `expect`:
 # then anything other than a clean pass blocks the merge.
