@@ -1,0 +1,11 @@
+# Keep the knowledge graph to first-party source.
+# Same syntax as .gitignore; .gitignore itself is respected automatically.
+
+.venv/
+node_modules/
+graphify-out/
+__pycache__/
+*.egg-info/
+package-lock.json
+registry-cache.json
+traces.json

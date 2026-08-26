@@ -15,3 +15,7 @@ node_modules/
 # local env + exported artifacts
 .env
 traces.json
+
+# graphify knowledge graph — regenerated from source in ~20s by
+# `graphify update .` and the post-commit hook, so it is build output
+graphify-out/
