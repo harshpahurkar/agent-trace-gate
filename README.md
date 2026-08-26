@@ -5,7 +5,7 @@ Cursor write, execute it in an instrumented sandbox, and catch hallucinated
 imports, fake APIs, and schema drift with OpenTelemetry traces — before it
 merges.
 
-[![checkpoint-gate](https://github.com/harshpahurkar/agent-trace-gate/actions/workflows/checkpoint-gate.yml/badge.svg)](https://github.com/harshpahurkar/agent-trace-gate/actions/workflows/checkpoint-gate.yml)
+![gate](https://img.shields.io/badge/gate-local%20git%20hook-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![node](https://img.shields.io/badge/node-20.6%2B-green)
 ![license](https://img.shields.io/badge/license-MIT-lightgrey)
@@ -114,15 +114,29 @@ The repo ships pre-wired — cloning it is the integration:
 - **Cursor** — `.cursor/hooks.json` does the same via `afterFileEdit`
   (Cursor has no native OTel; hooks are its only per-action stream).
   [docs/wiring-cursor.md](docs/wiring-cursor.md)
-- **CI** — `agenttrace check --base origin/main` gates the PR diff:
-  inline `::error` annotations on the offending line, a verdict table in the
-  job summary, raw Jaeger traces as a build artifact. Add the
-  `checkpoint-gate` workflow to branch protection and hallucinations can't
-  land on main.
+- **The gate** — one command, no hosted CI:
 
-Locally, `agenttrace check` (no flags) gates exactly the files the ledger
-says an agent touched, carrying `agent.session_id` onto the verdict trace so
-you can pivot in Jaeger between *what the agent did* and *how its code ran*.
+  ```bash
+  git config core.hooksPath .githooks
+  ```
+
+  `.githooks/pre-push` then runs `agenttrace check` over the commits leaving
+  your machine and **blocks the push** on an unexpected verdict, printing
+  `file:line: error-type: message` for each. Verified: a sample carrying a
+  fabricated import makes `git push` exit 1 and the branch never reaches the
+  remote. `--no-verify` is the documented escape hatch, and
+  `./scripts/gate.sh` (or `.\scripts\gate.ps1`) runs the whole suite — seeded
+  proof both ways, unit tests, ledger gate — on demand.
+  [docs/local-gate.md](docs/local-gate.md)
+
+Without `--base`, `agenttrace check` gates exactly the files the ledger says
+an agent touched, carrying `agent.session_id` onto the verdict trace so you
+can pivot in Jaeger between *what the agent did* and *how its code ran*.
+
+Nothing here needs a hosted runner or a billing account. `--report ci` is
+provider-agnostic: `::error` annotations plus a `$GITHUB_STEP_SUMMARY` table
+if a runner happens to provide them, plain `file:line:` output everywhere
+else.
 
 ## Repo map
 
@@ -133,8 +147,9 @@ you can pivot in Jaeger between *what the agent did* and *how its code ran*.
 | `samples/` | 8 seeded targets — each documents the failure it models |
 | `checkpoints.toml` | target declarations + expected verdicts |
 | `.claude/` `.cursor/` `hooks/` | agent wiring + shared provenance recorder |
-| `.github/workflows/` | seeded-proof job + PR merge gate |
-| `docs/` | [architecture](docs/architecture.md) · [span dictionary](docs/span-dictionary.md) · [limitations](docs/limitations.md) · [video script](docs/video-script.md) |
+| `.githooks/pre-push` | the merge gate — blocks pushes that fail a checkpoint |
+| `scripts/` | quickstart, full local gate, Jaeger trace export |
+| `docs/` | [architecture](docs/architecture.md) · [local gate](docs/local-gate.md) · [span dictionary](docs/span-dictionary.md) · [limitations](docs/limitations.md) · [video script](docs/video-script.md) |
 
 ## What this is not
 
@@ -142,8 +157,9 @@ Honest scope, spelled out in **[docs/limitations.md](docs/limitations.md)**:
 the subprocess sandbox is *observation-grade containment, not a security
 boundary* (truly untrusted code needs microVM/gVisor-class isolation); a
 green checkpoint is not correct code (it removes one failure class, it
-doesn't replace tests); and the agent-side telemetry it integrates is
-partly beta and can shift.
+doesn't replace tests); a local hook is a convenience, not enforcement —
+it only runs for people who installed it, and `--no-verify` skips it; and
+the agent-side telemetry it integrates is partly beta and can shift.
 
 ## License
 

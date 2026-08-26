@@ -21,10 +21,11 @@ Four components, two trace flows, one Jaeger UI.
             ▲
             │ same CLI, same spans
 ┌───────────┴─────────────┐
-│  CI gate                │
-│  checkpoint-gate.yml    │
+│  merge gate             │
+│  .githooks/pre-push     │
 │  agenttrace check       │
-│  --base origin/main     │
+│  --base <remote tip>    │
+│  nonzero → push refused │
 └─────────────────────────┘
 ```
 
@@ -65,7 +66,8 @@ agenttrace check / demo / run
 The first failing checkpoint decides the verdict and short-circuits the rest;
 skipped checkpoints still appear with `checkpoint.skipped=true` so the tree
 always shows the full pipeline shape. The verdict becomes the CLI exit code,
-and the CLI exit code is the CI gate.
+and the CLI exit code is what `.githooks/pre-push` turns into a refused push
+(see [local-gate.md](local-gate.md)).
 
 ## Correlation between the flows
 

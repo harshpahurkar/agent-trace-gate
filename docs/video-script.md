@@ -53,8 +53,15 @@ On-screen citation: arXiv:2406.10279 (USENIX Security '25).
 7. Launch `claude` in the repo, ask it to tweak `weather_report.py`.
    Refresh Jaeger: `claude-code` and `agent-hooks` services appear.
    `agenttrace check` gates exactly the file the agent touched.
-8. Cut to a GitHub PR reintroducing `_.slugify` → checkpoint-gate goes red,
-   inline annotation on the exact line, verdict table in the job summary.
+8. The gate. `git config core.hooksPath .githooks`, then commit a sample
+   carrying a fabricated import and run `git push`.
+
+   > "No CI service, no runner, no billing account — just a git hook. The
+   > push is refused, with the offending line printed. That's the whole
+   > gate."
+
+   Show the `file:line: hallucinated-import:` line and the non-zero exit,
+   then `git ls-remote` proving the branch never reached the remote.
 
 ## Close (5:45–6:15)
 

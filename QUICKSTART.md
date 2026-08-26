@@ -101,9 +101,11 @@ That's the whole loop: **~4–5 minutes cold, under a minute warm.**
   to the provenance ledger and Jaeger. Details:
   [docs/wiring-cursor.md](docs/wiring-cursor.md).
 - **Gate your own edits:** after an agent edits a watched file,
-  `agenttrace check` gates exactly the files in the ledger; in CI,
-  `agenttrace check --base origin/main` gates the PR diff. See
-  [.github/workflows/checkpoint-gate.yml](.github/workflows/checkpoint-gate.yml).
+  `agenttrace check` gates exactly the files in the ledger.
+- **Turn on the merge gate:** `git config core.hooksPath .githooks` — from
+  then on `git push` runs the checkpoints over the outgoing commits and
+  refuses the push on an unexpected verdict. No hosted CI, no billing
+  account. See [docs/local-gate.md](docs/local-gate.md).
 - **Metrics too:** `docker compose down && docker compose --profile lgtm up -d lgtm`
   swaps Jaeger for Grafana's OTel-LGTM all-in-one (UI on :3000, admin/admin)
   so Claude Code's `claude_code.*` metrics have somewhere to land.

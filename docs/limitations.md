@@ -33,7 +33,17 @@ tests or review.
   until you add an allowlist. Registry flakiness is mitigated (not
   eliminated) by the committed `registry-cache.json`.
 
-## 4. The agent-side plumbing is beta and can shift under us
+## 4. A local hook is a convenience, not an enforcement boundary
+
+The merge gate is `.githooks/pre-push`. It only runs for people who ran
+`git config core.hooksPath .githooks`, and `git push --no-verify` skips it by
+design. That is the right trade for a demo repo — the gate costs nothing and
+needs no hosted runner — but real enforcement has to live somewhere the
+pusher cannot opt out of: a protected branch with a required status check, or
+a server-side `pre-receive` hook. Treat this gate as a fast local signal, not
+a guarantee about what reached the remote.
+
+## 5. The agent-side plumbing is beta and can shift under us
 
 Claude Code's span export needs `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1`, and
 `OTEL_*` vars are not propagated to hooks or Bash subprocesses — so
@@ -42,7 +52,7 @@ joining is best-effort). Cursor has no native OTel at all; its side is
 hooks-only, and `afterFileEdit` cannot block. Any release of either tool can
 change these behaviours.
 
-## 5. Version pins will age
+## 6. Version pins will age
 
 - OTel's GenAI semantic conventions are still **Development** status and
   have already renamed attributes twice (`gen_ai.system` →
