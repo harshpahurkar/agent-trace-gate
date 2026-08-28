@@ -63,3 +63,33 @@ def test_verdict_expectation_logic(cfg):
     verdict = run(cfg, "user_api", skip_static=True)
     assert verdict.expected == "schema-mismatch"
     assert verdict.as_expected
+
+
+def test_missing_target_is_harness_error_not_crash(cfg):
+    """A declared target that isn't on disk is a config problem, not a defect in
+    the code under test — and it must not take the whole gate down with an
+    uncaught FileNotFoundError."""
+    from agenttrace.config import Target
+
+    ghost = Target(
+        name="ghost",
+        file="samples/python/does_not_exist.py",
+        language="python",
+        contract=None,
+    )
+    verdict = pipeline.run_target(cfg, ghost)
+    assert verdict.error_type == "harness-error"
+    assert verdict.checkpoint == "checkpoint.provenance"
+
+
+def test_missing_target_does_not_abort_sibling_targets(cfg):
+    """One missing file must not stop the remaining targets from being gated."""
+    from agenttrace.config import Target
+
+    ghost = Target(name="ghost", file="samples/python/does_not_exist.py", language="python")
+    verdicts = [
+        pipeline.run_target(cfg, ghost),
+        run(cfg, "weather_report", skip_static=True),
+    ]
+    assert verdicts[0].error_type == "harness-error"
+    assert verdicts[1].passed

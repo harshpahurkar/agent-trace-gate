@@ -91,6 +91,15 @@ def run_target(
             for key, value in (provenance or {"source": "seeded-sample"}).items():
                 if value is not None:
                     span.set_attribute(f"provenance.{key}", str(value))
+            # A declared target that isn't on disk is a config problem, not a
+            # defect in the code under test — so it is harness-error, never
+            # crash. Catching it here also stops one renamed file from taking
+            # down the whole gate with an uncaught FileNotFoundError.
+            if not sample.is_file():
+                decide("checkpoint.provenance", V.HARNESS_ERROR,
+                       f"declared target is missing from disk: {target.file}",
+                       {"file": target.file})
+                span.set_status(ot_trace.Status(ot_trace.StatusCode.ERROR, result.message))
 
         # ---- checkpoint.static.imports ---------------------------------
         if result.passed and not skip_static:
