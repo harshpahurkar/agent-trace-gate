@@ -24,8 +24,17 @@ so the hook updates when the repo does.
    `origin/master`, `master`).
 3. It runs `agenttrace check --base <base> --head <local oid> --report ci`,
    which gates exactly the watched files in that range.
-4. Non-matching verdict → nonzero exit → **the push is blocked**, with one
+4. Non-matching verdict → exit 1 → **the push is blocked**, with one
    `file:line: error-type: message` line per failure.
+5. A range that will not resolve → exit 2 → the push is blocked too, but the
+   message says the gate *could not run*. No checkpoint produced a verdict, so
+   nothing is being claimed about your code.
+
+Unrelated histories are deliberately not case 5. A rebuilt or grafted branch
+shares no merge base with the remote tip, and `git diff base...head` exits 128
+rather than saying so; the gate falls back to the two-dot tree comparison and
+carries on. The reported range tells you which one you got — `base...head` when
+they share history, `base..head` when they don't.
 
 Because the gate runs on the commits leaving your machine, "before it merges
 to main" is enforced at the last moment it can be enforced locally.

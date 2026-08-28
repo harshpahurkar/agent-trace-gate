@@ -30,7 +30,8 @@ else
 fi
 
 zero=$(git hash-object --stdin </dev/null | tr '[:xdigit:]' '0')
-status=0
+status=0    # a checkpoint verdict did not match expectations
+harness=0   # the gate itself could not run, so nothing was checked
 
 resolve_base() {
   # $1 = remote oid for this ref
@@ -58,15 +59,27 @@ while read -r _local_ref local_oid _remote_ref remote_oid; do
   fi
 
   echo "pre-push: checkpoint gate, $base...${local_oid}"
-  if ! "$agenttrace" check --base "$base" --head "$local_oid" --report ci; then
-    status=1
-  fi
+  "$agenttrace" check --base "$base" --head "$local_oid" --report ci
+  case $? in
+    0) ;;
+    2) harness=1 ;;   # exit 2: the range would not resolve, no verdict exists
+    *) status=1 ;;
+  esac
 done
 
-if [ "$status" -ne 0 ]; then
+if [ "$harness" -ne 0 ] || [ "$status" -ne 0 ]; then
   echo ""
-  echo "pre-push: BLOCKED - a checkpoint verdict did not match expectations."
-  echo "          inspect the trace in Jaeger, or push anyway with --no-verify."
+  if [ "$harness" -ne 0 ]; then
+    echo "pre-push: BLOCKED - the gate could not run; no checkpoint produced a verdict."
+    echo "          this is a harness problem (a base that will not resolve, or two"
+    echo "          histories with no common ancestor), not a claim about your code."
+    echo "          fix the base, or push anyway with --no-verify."
+  fi
+  if [ "$status" -ne 0 ]; then
+    echo "pre-push: BLOCKED - a checkpoint verdict did not match expectations."
+    echo "          inspect the trace in Jaeger, or push anyway with --no-verify."
+  fi
+  exit 1
 fi
 
-exit "$status"
+exit 0

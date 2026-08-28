@@ -95,17 +95,51 @@ def load(root: Path | None = None) -> Config:
     return Config(root=root, targets=targets, timeout=timeout)
 
 
+class GitRangeError(RuntimeError):
+    """`base`/`head` could not be resolved into a diff.
+
+    Our own tooling failing to work out *what to gate* - never a statement
+    about the code under test, so it must not reach the caller as a verdict.
+    """
+
+
+def _shares_history(root: Path, base: str, head: str) -> bool:
+    return subprocess.run(
+        ["git", "merge-base", base, head],
+        cwd=root, capture_output=True, text=True,
+    ).returncode == 0
+
+
+def diff_spec(root: Path, base: str, head: str = "HEAD") -> str:
+    """The range `changed_files` will diff, as git spells it.
+
+    Three-dot (PR semantics: what `head` added since the merge base) whenever
+    the two revisions share history. When they don't — a rebuilt or grafted
+    branch, a force-push over a rewritten history — there is no merge base and
+    `A...B` exits 128 instead of saying so, so fall back to the two-dot tree
+    comparison, which is well defined for any two commits.
+    """
+    sep = "..." if _shares_history(root, base, head) else ".."
+    return f"{base}{sep}{head}"
+
+
 def changed_files(root: Path, base: str, head: str = "HEAD") -> list[str]:
-    """Repo-relative paths changed vs `base` (three-dot diff, like a PR).
+    """Repo-relative paths changed vs `base`.
 
     `head` defaults to the working checkout but the pre-push hook passes the
     exact commit being pushed, which is not always HEAD.
     """
+    spec = diff_spec(root, base, head)
     out = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...{head}"],
+        ["git", "diff", "--name-only", spec],
         cwd=root,
         capture_output=True,
         text=True,
-        check=True,
     )
+    if out.returncode != 0:
+        detail = out.stderr.strip().splitlines()
+        raise GitRangeError(
+            f"could not diff {spec}: "
+            + (detail[0] if detail else f"git exited {out.returncode}")
+        )
     return [line.strip().replace("\\", "/") for line in out.stdout.splitlines() if line.strip()]

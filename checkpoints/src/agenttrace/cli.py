@@ -6,8 +6,9 @@
                        it claims to catch (exit 0 only when all match)
     agenttrace check   gate mode: resolve AI-authored files from the
                        provenance ledger (or a --base git diff, which is what
-                       the pre-push hook uses), run the pipeline, exit nonzero
-                       on any unexpected verdict
+                       the pre-push hook uses), run the pipeline, exit 1 on any
+                       unexpected verdict — or 2 if the range would not resolve
+                       and no checkpoint ever ran
     agenttrace run     run the pipeline over one file
 """
 
@@ -64,9 +65,17 @@ def cmd_check(args) -> int:
     otel.configure(args.otel)
 
     if args.base:
-        changed = set(config.changed_files(cfg.root, args.base, args.head))
+        try:
+            changed = set(config.changed_files(cfg.root, args.base, args.head))
+        except config.GitRangeError as exc:
+            report.console.print(f"[red]gate could not run:[/red] {exc}")
+            report.console.print(
+                "[yellow]no checkpoint ran - this is a harness problem, "
+                "not a verdict about the code being pushed.[/yellow]"
+            )
+            return 2
         candidates = [t for t in cfg.targets if t.file in changed]
-        source = {"source": f"git-diff {args.base}...{args.head}"}
+        source = {"source": f"git-diff {config.diff_spec(cfg.root, args.base, args.head)}"}
         prov_by_file: dict[str, dict] = {}
     else:
         ledger = provenance.read_ledger(cfg.root)
